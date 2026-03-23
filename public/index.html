@@ -94,18 +94,18 @@
                     <summary>General & Network</summary>
                     <div class="details-content grid">
                         <div>
-                            <label>Send Remote-Party-ID:</label>
-                            <select name="sendrpid">
-                                <option value="">-- Ignora / No --</option>
-                                <option value="rpid">Use Remote-Party-ID</option> <option value="pai">PAI (P-Asserted-Identity)</option>
+                            <label>Trust Remote-Party-ID:</label>
+                            <select name="trustrpid">
+                                <option value="">-- Ignora --</option>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
                             </select>
-                        </div>  
+                        </div>
                         <div>
                             <label>Send Remote-Party-ID:</label>
                             <select name="sendrpid">
-                                <option value="">-- Ignora --</option>
-                                <option value="yes">Use Remote-Party-ID</option>
-                                <option value="no">No</option>
+                                <option value="">-- Ignora / No --</option>
+                                <option value="rpid">Use Remote-Party-ID</option>
                                 <option value="pai">PAI (P-Asserted-Identity)</option>
                             </select>
                         </div>
@@ -307,11 +307,11 @@
                         </select>
                     </div>
                     <div>
-                        <label>Call Group (Default 0):</label>
+                        <label>Call Group:</label>
                         <select id="create-cg" class="cg-dropdown"><option value="0">0</option></select>
                     </div>
                     <div>
-                        <label>Pickup Group (Default 0):</label>
+                        <label>Pickup Group:</label>
                         <select id="create-pg" class="pg-dropdown"><option value="0">0</option></select>
                     </div>
                     <div>
@@ -508,7 +508,6 @@
         function buildMassEditUI() {
             const extList = document.getElementById('ext-list');
             extList.innerHTML = '';
-            let callGroups = new Set(), pickupGroups = new Set();
 
             // POPOLA LA TENDINA DEI DISPOSITIVI (UAD) NELLA SCHEDA CREAZIONE
             const uadSelect = document.getElementById('create-uad');
@@ -543,25 +542,36 @@
                 }
             }
 
+            // Stampa la lista di interni selezionabili per la modifica massiva
             for (const [id, data] of Object.entries(cachedExts)) {
                 if (typeof data === 'object' && data.ext) {
                     extList.innerHTML += `<div class="ext-item"><label><input type="checkbox" class="ext-checkbox" value="${id}"> <strong>${data.ext}</strong> (${data.name || ''})</label></div>`;
-                    if (data.callgroup) callGroups.add(data.callgroup);
-                    if (data.pickupgroup) pickupGroups.add(data.pickupgroup);
                 }
             }
 
-            const cgSelects = document.querySelectorAll('.cg-dropdown');
-            const pgSelects = document.querySelectorAll('.pg-dropdown');
-            
-            let cgOptions = '<option value="">-- Ignora --</option><option value="0">0</option>';
-            let pgOptions = '<option value="">-- Ignora --</option><option value="0">0</option>';
-            
-            callGroups.forEach(cg => { if (cg !== "0") cgOptions += `<option value="${cg}">${cg}</option>`; });
-            pickupGroups.forEach(pg => { if (pg !== "0") pgOptions += `<option value="${pg}">${pg}</option>`; });
+            // ==========================================
+            // GESTIONE CALL GROUP E PICKUP GROUP (0 - 63)
+            // ==========================================
+            const cgSelect = document.getElementById('callgroup-select'); // Modifica Massiva
+            const pgSelect = document.getElementById('pickupgroup-select');
+            const createCg = document.getElementById('create-cg');        // Creazione
+            const createPg = document.getElementById('create-pg');
 
-            cgSelects.forEach(s => s.innerHTML = cgOptions);
-            pgSelects.forEach(s => s.innerHTML = pgOptions);
+            let massOptions = '<option value="">-- Ignora --</option>';
+            let createOptions = '';
+
+            // PBXware supporta esattamente 64 gruppi (da 0 a 63)
+            for (let i = 0; i <= 63; i++) {
+                massOptions += `<option value="${i}">${i}</option>`;
+                createOptions += `<option value="${i}">${i}</option>`;
+            }
+
+            // Assegna le opzioni alle rispettive tendine
+            if (cgSelect) cgSelect.innerHTML = massOptions;
+            if (pgSelect) pgSelect.innerHTML = massOptions;
+            if (createCg) createCg.innerHTML = createOptions;
+            if (createPg) createPg.innerHTML = createOptions;
+            // ==========================================
 
             const trunkContainer = document.getElementById('trunk-callerid-list');
             const trunkSelects = document.querySelectorAll('.trunk-dropdown');
@@ -906,6 +916,14 @@
 
             const defaults = {
                 ua: document.getElementById('create-uad').value,
+                
+                // --- PARAMETRI FISSI INVISIBILI ---
+                location: '2',               // 2 = Remote
+                nat: '1',                    // 1 = Yes
+                show_in_dir: '1',            // 1 = Yes (Visibile in rubrica)
+                override_lcr: '1',           // 1 = Yes (forzato)
+                // ----------------------------------
+
                 voicemail: '0', 
                 max_contacts: '5', 
                 trustrpid: '1', 
@@ -916,12 +934,7 @@
                 busylevel: '1', 
                 busylevel_incoming: '1', 
                 dhcp: '1', 
-                nat: '1',
-                location: '2',
                 acodecs: 'alaw:g729',
-                show_in_dir: '1',
-                override_lcr: '1',
-                // Aggiunto || '0' per forzare lo zero se la tendina è su "-- Ignora --"
                 callgroup: document.getElementById('create-cg').value || '0', 
                 pickupgroup: document.getElementById('create-pg').value || '0',
                 autoprovisiong: document.getElementById('create-autoprov').value
