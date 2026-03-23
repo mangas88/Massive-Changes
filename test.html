@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>PBXware Centralized Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; color: #333; margin: 0; }
+        
+        /* Stili Navigazione (Tabs) */
+        .nav-bar { background: #007bff; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; gap: 15px; }
+        .nav-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px; transition: background 0.3s;}
+        .nav-btn:hover { background: rgba(255,255,255,0.4); }
+        .nav-btn.active { background: white; color: #007bff; }
+        
+        /* Stili Base */
+        .section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; padding: 10px 0; }
+        .grid-2 { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 13px; color: #555; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; padding: 10px 15px; font-weight: bold;}
+        button:hover { background-color: #0056b3; }
+        .btn-apply { background-color: #28a745; width: 100%; font-size: 16px; padding: 15px; margin-top: 20px;}
+        .btn-apply:hover { background-color: #218838; }
+        
+        #ext-list { max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-top: 10px; background: #fafafa;}
+        .ext-item { margin-bottom: 5px; }
+        
+        details { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; background: #fff; }
+        summary { font-weight: bold; padding: 10px; background: #e9ecef; cursor: pointer; border-radius: 4px; outline: none; }
+        .details-content { padding: 15px; }
+        .codec-group label, .es-group label { display: inline-block; width: auto; font-weight: normal; margin-right: 15px; }
+        .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px;}
+
+        /* Stili specifici GNR */
+        .view-section { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
+        th { background-color: #f8f9fa; font-size: 14px; }
+        .gnr-toolbar { display: flex; gap: 15px; background: #e9ecef; padding: 15px; border-radius: 8px; align-items: flex-end; margin-bottom: 20px;}
+        .gnr-toolbar > div { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <button class="nav-btn active" onclick="switchView('mass-edit-view', this)">Modifica Massiva Interni</button>
+        <button class="nav-btn" onclick="switchView('gnr-view', this)">Gestione GNR (Passanti)</button>
+    </div>
+
+    <div class="section">
+        <h2>1. Seleziona Tenant e Carica Dati</h2>
+        <div style="display: flex; gap: 15px;">
+            <select id="tenant-select" style="flex: 1;"><option value="">Caricamento tenants...</option></select>
+            <button onclick="loadTenantData()">Carica Dati Completi (Interni + Trunk)</button>
+        </div>
+    </div>
+
+    <div id="mass-edit-view" class="view-section" style="display: block;">
+        <div class="section" id="extensions-section" style="display: none;">
+            <h2>2. Seleziona Interni</h2>
+            <label><input type="checkbox" onclick="toggleAll(this, '.ext-checkbox')"> Seleziona Tutti</label>
+            <div id="ext-list"></div>
+        </div>
+
+        <div class="section" id="edit-section" style="display: none;">
+            <h2>3. Campi da Modificare (Mass Edit)</h2>
+            <p><small style="color:red;">Lascia vuoto o su "-- Ignora --" ciò che non vuoi sovrascrivere.</small></p>
+            
+            <form id="bulk-edit-form">
+                
+                <details>
+                    <summary>Call Control</summary>
+                    <div class="details-content grid">
+                        <div><label>Incoming Limit:</label><input type="number" name="incominglimit"></div>
+                        <div><label>Outgoing Limit:</label><input type="number" name="outgoinglimit"></div>
+                        <div><label>Busy Level:</label><input type="number" name="busylevel"></div>
+                        <div><label>Apply Busy Level for Incoming (1/0):</label><select name="busylevel_incoming"><option value="">-- Ignora --</option><option value="1">Yes</option><option value="0">No</option></select></div>
+                        <div><label>Busy destination for Incoming:</label><input type="text" name="busy_dest_incoming" placeholder="es. 121"></div>
+                        <div><label>Busy destination Voicemail:</label><select name="busy_dest_incoming_vm"><option value="">-- Ignora --</option><option value="1">Yes</option><option value="0">No</option></select></div>
+                        <div>
+                            <label>Call Group:</label>
+                            <select name="callgroup" id="callgroup-select"><option value="">-- Ignora --</option></select>
+                        </div>
+                        <div>
+                            <label>Pickup Group:</label>
+                            <select name="pickupgroup" id="pickupgroup-select"><option value="">-- Ignora --</option></select>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>General & Network</summary>
+                    <div class="details-content grid">
+                        <div><label>Trust Remote-Party-ID:</label><select name="trustrpid"><option value="">-- Ignora --</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+                        <div><label>Send Remote-Party-ID:</label><select name="sendrpid"><option value="">-- Ignora --</option><option value="yes">Use Remote-Party-ID</option><option value="no">No</option><option value="pai">PAI (P-Asserted-Identity)</option></select></div>
+                        <div><label>WebRTC Enabled (1/0):</label><select name="webrtc"><option value="">-- Ignora --</option><option value="1">Yes</option><option value="0">No</option></select></div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Trunks Settings</summary>
+                    <div class="details-content grid">
+                        <div><label>Primary Trunk:</label><select name="primary_trunk" class="trunk-dropdown"><option value="">-- Ignora --</option></select></div>
+                        <div><label>Secondary Trunk:</label><select name="secondary_trunk" class="trunk-dropdown"><option value="">-- Ignora --</option></select></div>
+                        <div><label>Tertiary Trunk:</label><select name="tertiary_trunk" class="trunk-dropdown"><option value="">-- Ignora --</option></select></div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Voicemail</summary>
+                    <div class="details-content grid">
+                        <div><label>Voicemail Enabled (1/0):</label><select name="voicemail"><option value="">-- Ignora --</option><option value="1">Yes</option><option value="0">No</option></select></div>
+                        <div><label>Voicemail Delay (sec):</label><input type="number" name="vmaildelay"></div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Auto Provisioning</summary>
+                    <div class="details-content grid">
+                        <div><label>Auto Provisioning (1/0):</label><select name="autoprovisiong"><option value="">-- Ignora --</option><option value="1">Yes</option><option value="0">No</option></select></div>
+                        <div><label>MAC Address:</label><input type="text" name="macaddress"></div>
+                        <div><label>SN:</label><input type="text" name="sn"></div>
+                        <div><label>Device Location ID:</label><input type="text" name="device_location_id"></div>
+                        <div><label>DHCP (1/0):</label><select name="dhcp"><option value="">-- Ignora --</option><option value="1">Yes</option><option value="0">No</option></select></div>
+                        <div><label>Static IP:</label><input type="text" name="staticip"></div>
+                        <div><label>Netmask:</label><input type="text" name="netmask"></div>
+                        <div><label>Gateway:</label><input type="text" name="gateway"></div>
+                        <div><label>DNS Server 1:</label><input type="text" name="dns1"></div>
+                        <div><label>DNS Server 2:</label><input type="text" name="dns2"></div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Codecs</summary>
+                    <div class="details-content">
+                        <p><small>Seleziona i codec da attivare. Quelli non spuntati verranno ignorati.</small></p>
+                        <div class="codec-group">
+                            <label><input type="checkbox" class="codec-cb" value="ulaw"> G.711 ulaw</label>
+                            <label><input type="checkbox" class="codec-cb" value="alaw"> G.711 alaw</label>
+                            <label><input type="checkbox" class="codec-cb" value="g722"> G.722</label>
+                            <label><input type="checkbox" class="codec-cb" value="opus"> Opus</label>
+                            <label><input type="checkbox" class="codec-cb" value="g723.1"> G.723.1</label>
+                            <label><input type="checkbox" class="codec-cb" value="g726"> G.726</label>
+                            <label><input type="checkbox" class="codec-cb" value="g729"> G.729</label>
+                            <label><input type="checkbox" class="codec-cb" value="gsm"> GSM</label>
+                            <label><input type="checkbox" class="codec-cb" value="ilbc"> iLBC</label>
+                            <label><input type="checkbox" class="codec-cb" value="speex"> Speex</label>
+                            <label><input type="checkbox" class="codec-cb" value="lpc10"> LPC10</label>
+                            <label><input type="checkbox" class="codec-cb" value="h261"> H.261 (Video)</label>
+                            <label><input type="checkbox" class="codec-cb" value="h263"> H.263 (Video)</label>
+                            <label><input type="checkbox" class="codec-cb" value="h263p"> H.263p (Video)</label>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Enhanced Services (Abilitazione / Disabilitazione)</summary>
+                    <div class="details-content grid grid-2" id="es-states-container"></div>
+                </details>
+
+                <details>
+                    <summary>Configurazione Caller ID & Trunks (Condivisa)</summary>
+                    <div class="details-content">
+                        <p><small>Configura il Caller ID di Rete/Emergenza e i Caller ID specifici per i Trunk associati alla Tenant.</small></p>
+                        <div class="grid" style="margin-bottom: 20px;">
+                            <div><label>System/Network CallerID:</label><input type="text" id="es_sys_callerid"></div>
+                            <div><label>Emergency CallerID:</label><input type="text" id="es_em_callerid"></div>
+                        </div>
+                        <h4>Trunk CallerID and Privacy header:</h4>
+                        <div id="trunk-callerid-list"></div>
+                    </div>
+                </details>
+
+                <button type="button" class="btn-apply" onclick="applyChanges()">Applica Modifiche Massivamente</button>
+            </form>
+            
+            <div id="result-log" style="margin-top: 20px; white-space: pre-wrap; font-family: monospace; background: #eee; padding: 10px; border-radius: 4px;"></div>
+        </div>
+    </div>
+
+    <div id="gnr-view" class="view-section">
+        <div class="section" id="gnr-section" style="display: none;">
+            <h2>Gestione Passanti GNR</h2>
+            
+            <div class="gnr-toolbar">
+                <div>
+                    <label>Inserisci Radice GNR (es. +3905711655)</label>
+                    <input type="text" id="gnr-root" placeholder="+39...">
+                </div>
+                <div>
+                    <label>Seleziona Trunk Radice</label>
+                    <select id="gnr-trunk-select" class="trunk-dropdown"><option value="">Seleziona Trunk</option></select>
+                </div>
+                <div>
+                    <label>Cifre (Dalla fine dell'interno)</label>
+                    <select id="gnr-digits">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div>
+                    <button style="width: 100%; height: 35px; background-color: #17a2b8;" onclick="autoGenerateGNR()">Autocompila GNR OK</button>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto; max-height: 500px; overflow-y: auto; border: 1px solid #ccc;">
+                <table id="gnr-table">
+                    <thead style="position: sticky; top: 0; z-index: 1;">
+                        <tr id="gnr-table-head">
+                            </tr>
+                    </thead>
+                    <tbody id="gnr-table-body">
+                        </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn-apply" onclick="applyGNR()">Salva Caller ID GNR su PBXware</button>
+            <div id="gnr-result-log" style="margin-top: 20px; white-space: pre-wrap; font-family: monospace; background: #eee; padding: 10px; border-radius: 4px;"></div>
+        </div>
+        <div class="section" id="gnr-warning">
+            <p>Seleziona una Tenant e clicca su "Carica Dati" per visualizzare questa sezione.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        // VARIABILI GLOBALI PER TENERE IN MEMORIA I DATI (Utili per la doppia vista)
+        let cachedExts = {};
+        let cachedTrunks = {};
+
+        // ==========================
+        // 1. INIZIALIZZAZIONE & NAVIGAZIONE
+        // ==========================
+        const enhancedServices = [
+            { id: "callerid", name: "Caller ID" }, { id: "callpickup", name: "Call Pickup" },
+            { id: "lastcaller", name: "Last Caller" }, { id: "operationtimes", name: "Operation Times" },
+            { id: "callfilters", name: "Call Filters & Blocking" }, { id: "dnd", name: "Do Not Disturb" },
+            { id: "callscreening", name: "Call Screening" }, { id: "callfwd", name: "Call Forwarding" },
+            { id: "followme", name: "Follow Me" }, { id: "grouphunt", name: "Group Hunt" },
+            { id: "mobilenumbers", name: "Mobile Numbers" }, { id: "sppage", name: "Speakerphone Page" },
+            { id: "sppagegroups", name: "Speakerphone Page Groups" }, { id: "blflist", name: "Directory / BLF List" },
+            { id: "speeddial", name: "Speed Dial" }, { id: "instrecord", name: "Instant Recording" },
+            { id: "delrecordings", name: "Delete Recordings" }, { id: "listenrecordings", name: "Listen to Recordings" },
+            { id: "remoteaccess", name: "Remote Access" }, { id: "callmonitoring", name: "Call Monitoring" },
+            { id: "extoperationtimes", name: "System operation times" }, { id: "wakeupcall", name: "Wake-up Call" },
+            { id: "opwakeupcall", name: "Operator Wake-up Call" }, { id: "smsnotifications", name: "SMS Notifications" }
+        ];
+
+        window.onload = async () => {
+            // Inizializza Servizi ES
+            const esContainer = document.getElementById('es-states-container');
+            enhancedServices.forEach(service => {
+                esContainer.innerHTML += `
+                    <div class="flex-row">
+                        <label style="width: 200px; margin:0;">${service.name}:</label>
+                        <select class="es-state-select" data-esid="${service.id}">
+                            <option value="">-- Ignora --</option>
+                            <option value="yes">Abilitato (Yes)</option>
+                            <option value="no">Disabilitato (No)</option>
+                            <option value="pin">Con PIN</option>
+                        </select>
+                    </div>`;
+            });
+
+            // Carica Tenants
+            try {
+                const res = await fetch(`${API_BASE}/tenants`);
+                const tenantsObj = await res.json();
+                const select = document.getElementById('tenant-select');
+                for (const [id, data] of Object.entries(tenantsObj)) {
+                    if (id !== 'error') select.innerHTML += `<option value="${id}">${data.name} (ID: ${id})</option>`;
+                }
+            } catch (err) { alert("Errore caricamento tenants: " + err.message); }
+        };
+
+        function switchView(viewId, btnElement) {
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(viewId).style.display = 'block';
+            btnElement.classList.add('active');
+        }
+
+        // ==========================
+        // 2. CARICAMENTO DATI UNIFICATO
+        // ==========================
+        async function loadTenantData() {
+            const tenantId = document.getElementById('tenant-select').value;
+            if (!tenantId) return alert("Seleziona una Tenant!");
+
+            // Mostra sezioni
+            document.getElementById('extensions-section').style.display = 'block';
+            document.getElementById('edit-section').style.display = 'block';
+            document.getElementById('gnr-section').style.display = 'block';
+            document.getElementById('gnr-warning').style.display = 'none';
+            document.getElementById('ext-list').innerHTML = 'Caricamento in corso...';
+            
+            try {
+                const [extRes, trunkRes] = await Promise.all([
+                    fetch(`${API_BASE}/extensions/${tenantId}`),
+                    fetch(`${API_BASE}/tenant-trunks/${tenantId}`) 
+                ]);
+
+                cachedExts = await extRes.json();
+                cachedTrunks = await trunkRes.json();
+
+                // Costruisci le UI per entrambe le View
+                buildMassEditUI();
+                buildGNRUI();
+
+            } catch (err) { alert("Errore durante il caricamento: " + err.message); }
+        }
+
+        // ==========================
+        // 3. LOGICA MASS EDIT (Il tuo codice)
+        // ==========================
+        function buildMassEditUI() {
+            const extList = document.getElementById('ext-list');
+            extList.innerHTML = '';
+            
+            let callGroups = new Set();
+            let pickupGroups = new Set();
+
+            for (const [id, data] of Object.entries(cachedExts)) {
+                if (typeof data === 'object' && data.ext) {
+                    extList.innerHTML += `
+                        <div class="ext-item">
+                            <label><input type="checkbox" class="ext-checkbox" value="${id}"> 
+                            <strong>${data.ext}</strong> (${data.name || ''})</label>
+                        </div>`;
+                    if (data.callgroup) callGroups.add(data.callgroup);
+                    if (data.pickupgroup) pickupGroups.add(data.pickupgroup);
+                }
+            }
+
+            const cgSelect = document.getElementById('callgroup-select');
+            const pgSelect = document.getElementById('pickupgroup-select');
+            cgSelect.innerHTML = '<option value="">-- Ignora --</option>';
+            pgSelect.innerHTML = '<option value="">-- Ignora --</option>';
+            callGroups.forEach(cg => cgSelect.innerHTML += `<option value="${cg}">${cg}</option>`);
+            pickupGroups.forEach(pg => pgSelect.innerHTML += `<option value="${pg}">${pg}</option>`);
+
+            const trunkContainer = document.getElementById('trunk-callerid-list');
+            const trunkSelects = document.querySelectorAll('.trunk-dropdown'); // Usato anche nella GNR!
+            
+            trunkContainer.innerHTML = '';
+            let trunkOptions = '<option value="">-- Ignora --</option><option value="-- Default --">-- Default --</option>';
+            
+            for (const [id, data] of Object.entries(cachedTrunks)) {
+                const trunkName = (typeof data === 'object' && data.name) ? data.name : (typeof data === 'string' ? data : id);
+                
+                if(trunkName && trunkName !== 'success' && trunkName !== 'error') {
+                    trunkOptions += `<option value="${trunkName}">${trunkName}</option>`;
+                    trunkContainer.innerHTML += `
+                        <div class="flex-row">
+                            <label style="width: 200px;">Trunk: ${trunkName}</label>
+                            <input type="text" class="trunk-cid-input" data-trunk="${trunkName}" placeholder="Lascia vuoto per non modificare">
+                            <select class="trunk-privacy-select" data-trunk="${trunkName}">
+                                <option value="4">None</option>
+                                <option value="0">Anonymous</option>
+                                <option value="1">Anonymous ID</option>
+                                <option value="2">Anonymous Number</option>
+                                <option value="3">Anonymous Number ID</option>
+                            </select>
+                        </div>`;
+                }
+            }
+            trunkSelects.forEach(select => select.innerHTML = trunkOptions);
+            if (trunkContainer.innerHTML === '') trunkContainer.innerHTML = '<p><small>Nessun trunk assegnato a questa tenant.</small></p>';
+        }
+
+        function toggleAll(source, selector) { document.querySelectorAll(selector).forEach(cb => cb.checked = source.checked); }
+
+        async function applyChanges() {
+            const tenantId = document.getElementById('tenant-select').value;
+            const selectedExts = Array.from(document.querySelectorAll('.ext-checkbox:checked')).map(cb => cb.value);
+            
+            if (selectedExts.length === 0) return alert("Nessun interno selezionato!");
+
+            const updateData = {};
+            const formData = new FormData(document.getElementById('bulk-edit-form'));
+            for (let [key, value] of formData.entries()) {
+                if (value.trim() !== '') updateData[key] = value.trim();
+            }
+
+            const selectedCodecs = Array.from(document.querySelectorAll('.codec-cb:checked')).map(cb => cb.value);
+            if (selectedCodecs.length > 0) updateData['acodecs'] = selectedCodecs.join(':');
+
+            const esStates = {};
+            document.querySelectorAll('.es-state-select').forEach(select => {
+                if(select.value !== '') esStates[select.getAttribute('data-esid')] = select.value;
+            });
+
+            let esCallerId = null;
+            const sysCid = document.getElementById('es_sys_callerid').value.trim();
+            const emCid = document.getElementById('es_em_callerid').value.trim();
+            const trunks = [], tcallerids = [], tprivacies = [];
+            document.querySelectorAll('.trunk-cid-input').forEach(input => {
+                const val = input.value.trim();
+                if(val !== '') {
+                    const trunkName = input.getAttribute('data-trunk');
+                    const privacy = document.querySelector(`.trunk-privacy-select[data-trunk="${trunkName}"]`).value;
+                    trunks.push(trunkName);
+                    tcallerids.push(val);
+                    tprivacies.push(privacy);
+                }
+            });
+
+            if (sysCid || emCid || trunks.length > 0) {
+                esCallerId = {};
+                if (sysCid) esCallerId.callerid = sysCid;
+                if (emCid) esCallerId.emergencycid = emCid;
+                if (trunks.length > 0) {
+                    esCallerId.trunks = trunks.join(':');
+                    esCallerId.tcallerids = tcallerids.join(':');
+                    esCallerId.tprivacies = tprivacies.join(':');
+                }
+            }
+
+            if (Object.keys(updateData).length === 0 && Object.keys(esStates).length === 0 && !esCallerId) return alert("Nessun parametro da modificare è stato compilato!");
+            if (!confirm(`Stai applicando le modifiche a ${selectedExts.length} interni. Procedere?`)) return;
+
+            const logDiv = document.getElementById('result-log');
+            logDiv.innerText = "Invio dati a PBXware in corso, attendere...";
+            
+            try {
+                const response = await fetch(`${API_BASE}/extensions/bulk-update`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId, extensionIds: selectedExts, updateData, esStates, esCallerId })
+                });
+
+                const result = await response.json();
+                let logText = `Operazione completata.\nSuccessi: ${result.success.length}\nFalliti: ${result.failed.length}\n`;
+                if (result.failed.length > 0) logText += `\nErrori:\n${JSON.stringify(result.failed, null, 2)}`;
+                logDiv.innerText = logText;
+            } catch (err) { logDiv.innerText = "Errore critico: " + err.message; }
+        }
+
+        // ==========================
+        // 4. LOGICA GESTIONE GNR
+        // ==========================
+        function buildGNRUI() {
+            const tHead = document.getElementById('gnr-table-head');
+            const tBody = document.getElementById('gnr-table-body');
+            
+            // 1. Array Nomi Trunk
+            let trunkNames = [];
+            for (const [id, data] of Object.entries(cachedTrunks)) {
+                const tName = (typeof data === 'object' && data.name) ? data.name : (typeof data === 'string' ? data : id);
+                if(tName && tName !== 'success' && tName !== 'error') trunkNames.push(tName);
+            }
+
+            // 2. Intestazione Tabella
+            let headHtml = '<th style="min-width: 150px;">Interno</th>';
+            trunkNames.forEach(tName => headHtml += `<th>Trunk: ${tName}</th>`);
+            tHead.innerHTML = headHtml;
+
+            // 3. Righe Tabella
+            let bodyHtml = '';
+            for (const [extId, data] of Object.entries(cachedExts)) {
+                if (typeof data === 'object' && data.ext) {
+                    bodyHtml += `<tr class="gnr-row" data-extid="${extId}" data-extnum="${data.ext}">
+                        <td><strong>${data.ext}</strong><br><small>${data.name || ''}</small></td>`;
+                    
+                    trunkNames.forEach(tName => {
+                        bodyHtml += `<td><input type="text" class="gnr-cid-table-input" data-trunk="${tName}" placeholder="Lascia vuoto per ignorare"></td>`;
+                    });
+                    bodyHtml += `</tr>`;
+                }
+            }
+            tBody.innerHTML = bodyHtml;
+        }
+
+        function autoGenerateGNR() {
+            const root = document.getElementById('gnr-root').value.trim();
+            const trunk = document.getElementById('gnr-trunk-select').value;
+            const digits = parseInt(document.getElementById('gnr-digits').value);
+
+            if (!root || !trunk || trunk === '-- Ignora --' || trunk === '-- Default --') {
+                return alert("Inserisci una Radice valida e seleziona un Trunk specifico dal menù!");
+            }
+
+            const rows = document.querySelectorAll('.gnr-row');
+            rows.forEach(row => {
+                const extNum = row.getAttribute('data-extnum'); // es. 201
+                
+                // Estrae le ultime X cifre (se ext=201 e digits=2, prende 01)
+                const ending = extNum.length >= digits ? extNum.slice(-digits) : extNum;
+                const generatedCid = root + ending;
+
+                // Trova l'input in questa riga che appartiene al trunk selezionato e lo popola
+                const input = row.querySelector(`.gnr-cid-table-input[data-trunk="${trunk}"]`);
+                if (input) input.value = generatedCid;
+            });
+        }
+
+        async function applyGNR() {
+            const tenantId = document.getElementById('tenant-select').value;
+            if (!tenantId) return alert("Seleziona una Tenant!");
+
+            const updates = [];
+            
+            // Cicla tutte le righe per raccogliere gli input GNR compilati
+            document.querySelectorAll('.gnr-row').forEach(row => {
+                const extId = row.getAttribute('data-extid');
+                const trunks = [];
+                const tcallerids = [];
+                const tprivacies = []; // 4 = None, mostriamo sempre il CID
+
+                row.querySelectorAll('.gnr-cid-table-input').forEach(input => {
+                    if (input.value.trim() !== '') {
+                        trunks.push(input.getAttribute('data-trunk'));
+                        tcallerids.push(input.value.trim());
+                        tprivacies.push('4'); 
+                    }
+                });
+
+                if (trunks.length > 0) {
+                    updates.push({
+                        extId: extId,
+                        trunks: trunks.join(':'),
+                        tcallerids: tcallerids.join(':'),
+                        tprivacies: tprivacies.join(':')
+                    });
+                }
+            });
+
+            if (updates.length === 0) return alert("Nessun Caller ID GNR inserito! Usa il generatore automatico o compila i campi a mano.");
+            if (!confirm(`Stai per aggiornare il CallerID GNR per ${updates.length} interni. Procedere?`)) return;
+
+            const logDiv = document.getElementById('gnr-result-log');
+            logDiv.innerText = "Salvataggio Caller ID su PBXware in corso...";
+
+            try {
+                // Chiama la rotta backend per l'aggiornamento GNR (diverso da Bulk Edit)
+                const response = await fetch(`${API_BASE}/extensions/gnr-update`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantId, updates })
+                });
+                const result = await response.json();
+                
+                let logText = `Completato!\nSuccessi: ${result.success.length}\nFalliti: ${result.failed.length}\n`;
+                if (result.failed.length > 0) logText += `\nErrori:\n${JSON.stringify(result.failed, null, 2)}`;
+                logDiv.innerText = logText;
+                
+            } catch (err) { logDiv.innerText = "Errore critico: " + err.message; }
+        }
+    </script>
+</body>
+</html>

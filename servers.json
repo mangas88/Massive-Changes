@@ -1,0 +1,17 @@
+{
+    "sip1": {
+        "name": "SIP",
+        "url": "https://sip.clk-italia.it/",
+        "apikey": "ZDd20MtOkQXyPFEn4sjWM0btWSIb1Iap"
+    },
+    "sip2": {
+        "name": "SIP 2",
+        "url": "https://sip2.clk-italia.it/",
+        "apikey": "alWfbs85Y66Iod1WDoJxZgwO2TNY9kfk"
+    },
+    "sip3": {
+        "name": "SIP 3",
+        "url": "https://sip3.clk-italia.it/",
+        "apikey": "kq6OddevZInr4h0gYJL4CT6T4O3AJXAt"
+    }
+}
