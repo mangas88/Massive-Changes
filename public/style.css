@@ -1,0 +1,313 @@
+/* ==========================================================================
+   Variabili CSS per un tema moderno
+   ========================================================================== */
+:root {
+    --bg-body: #f1f5f9;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --success: #10b981;
+    --success-hover: #059669;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --border-color: #e2e8f0;
+    --input-bg: #f8fafc;
+    --focus-ring: rgba(59, 130, 246, 0.3);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ==========================================================================
+   Reset e Base
+   ========================================================================== */
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+h2 { margin-top: 0; font-size: 1.5rem; color: #0f172a; }
+h4 { color: #334155; margin-bottom: 10px; }
+p { color: var(--text-muted); }
+small { color: var(--text-muted); font-size: 0.85rem; }
+
+/* ==========================================================================
+   Navigazione
+   ========================================================================== */
+.nav-bar {
+    background: #1e293b;
+    padding: 12px;
+    margin-bottom: 24px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: var(--shadow-md);
+}
+
+.nav-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    padding: 10px 16px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.nav-btn.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Sovrascrivo l'inline style verde del bottone "Creazione" per renderlo più moderno */
+.nav-btn[style*="background: #28a745"] {
+    background: var(--success) !important;
+    color: white !important;
+    border-color: var(--success) !important;
+}
+.nav-btn[style*="background: #28a745"]:hover {
+    background: var(--success-hover) !important;
+}
+
+/* ==========================================================================
+   Sezioni (Cards)
+   ========================================================================== */
+.section {
+    background: var(--bg-card);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ==========================================================================
+   Form e Input
+   ========================================================================== */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 10px 0; }
+.grid-2 { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
+label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #475569;
+}
+
+input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    background-color: #ffffff;
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+/* ==========================================================================
+   Pulsanti
+   ========================================================================== */
+button {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+button:active { transform: translateY(1px); }
+
+.btn-apply {
+    background-color: var(--success);
+    width: 100%;
+    font-size: 16px;
+    padding: 16px;
+    margin-top: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+.btn-apply:hover { background-color: var(--success-hover); box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.3); }
+
+/* Sovrascrivere i bottoni con colori inline del codice HTML */
+button[style*="background-color: #17a2b8"] { background-color: #0ea5e9 !important; }
+button[style*="background-color: #ff9800"] { background-color: var(--warning) !important; color: #fff !important;}
+button[style*="background-color: #28a745"] { background-color: var(--success) !important; }
+button[style*="background: #dc3545"] { background-color: var(--danger) !important; }
+
+/* ==========================================================================
+   Elenchi e Toolbar
+   ========================================================================== */
+#ext-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    margin-top: 15px;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+}
+
+.ext-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.1s;
+}
+.ext-item:hover { background: var(--bg-body); }
+
+.gnr-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    align-items: flex-end;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+.gnr-toolbar > div { flex: 1; min-width: 200px; }
+
+/* ==========================================================================
+   Accordion (Details / Summary)
+   ========================================================================== */
+details {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+summary {
+    font-weight: 600;
+    padding: 14px 20px;
+    background: #f8fafc;
+    cursor: pointer;
+    outline: none;
+    color: #334155;
+    transition: background 0.2s;
+    user-select: none;
+}
+summary:hover { background: #f1f5f9; }
+.details-content { padding: 20px; border-top: 1px solid var(--border-color); }
+
+.codec-group label, .es-group label {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    font-weight: normal;
+    margin-right: 20px;
+    margin-bottom: 10px;
+    color: #475569;
+}
+
+.flex-row { display: flex; gap: 15px; align-items: center; margin-bottom: 12px; }
+
+/* ==========================================================================
+   Tabelle
+   ========================================================================== */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 10px;
+}
+
+th, td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    background-color: #f8fafc;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.05em;
+    border-top: 1px solid var(--border-color);
+}
+
+th:first-child { border-left: 1px solid var(--border-color); border-top-left-radius: var(--radius-md); }
+th:last-child { border-right: 1px solid var(--border-color); border-top-right-radius: var(--radius-md); }
+td:first-child { border-left: 1px solid var(--border-color); }
+td:last-child { border-right: 1px solid var(--border-color); }
+tr:last-child td:first-child { border-bottom-left-radius: var(--radius-md); }
+tr:last-child td:last-child { border-bottom-right-radius: var(--radius-md); }
+
+tbody tr { transition: background-color 0.1s; }
+tbody tr:hover { background-color: #f8fafc; }
+
+/* ==========================================================================
+   Scrollbar personalizzata (Stile moderno)
+   ========================================================================== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ==========================================================================
+   Console Log Risultati (Stile Terminale Scuro)
+   ========================================================================== */
+#result-log, #gnr-result-log, #did-result-log, #create-result-log {
+    margin-top: 24px;
+    white-space: pre-wrap;
+    font-family: 'Courier New', Courier, monospace;
+    background: #0f172a;
+    color: #a7f3d0;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 13px;
+    line-height: 1.6;
+}
